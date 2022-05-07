@@ -3,33 +3,44 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { Container, Button } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
-import { buildFilesPath, extractFiles } from "./api/_helper-functions";
-import fs from "fs";
-import path from "path";
+import { MongoClient } from "mongodb";
+const { MONGODB_URI } = require("../secrets.json");
 
 export default function HomePage(props) {
   const { files } = props;
-
+  const [fetchedData, setFetchedData] = useState(files);
   const [showFiles, setShowFiles] = useState(true);
   const router = useRouter();
 
   const hasFiles = files && files.length !== 0;
 
   const deleteFileHandler = (id) => {
-    fetch(`/api/files/deleteFiles/${id}`, {
+    const reqBody = { fileID: files.id };
+    fetch(`/api/files/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
-    })
-      .then((res) => res.json())
-      .then((data) => console.log(data));
-    router.replace("/");
+      body: JSON.stringify(reqBody),
+    });
+    router.push("/");
+  };
+
+  const deleteAllFilesHandler = () => {
+    fetch("/api/files", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    router.push("/");
   };
 
   useEffect(() => {
-    router.push("/");
-  }, [router.query]);
+    fetch("/api/files")
+      .then((res) => res.json())
+      .then((data) => setFetchedData(data.files));
+  }, [fetchedData]);
 
   return (
     <>
@@ -38,6 +49,7 @@ export default function HomePage(props) {
       </Head>
       <Container style={{ marginTop: 20 }}>
         <h3>My Files:</h3>
+
         {showFiles && (
           <ul>
             {files.map(({ id, filename, filetype }) => (
@@ -82,7 +94,7 @@ export default function HomePage(props) {
           <Button
             color="red"
             size="small"
-            onClick={() => router.push("/api/files/deleteFiles/deleteAllFiles")}
+            onClick={() => deleteAllFilesHandler()}
           >
             Delete all files
           </Button>
@@ -93,19 +105,20 @@ export default function HomePage(props) {
 }
 
 export async function getServerSideProps() {
-  let filePath = buildFilesPath();
+  const client = await MongoClient.connect(MONGODB_URI);
+  const db = client.db();
+  const filesCollection = db.collection("files");
+  const files = await filesCollection.find().toArray();
 
-  if (!filePath || !fs.existsSync(filePath)) {
-    fs.mkdirSync(path.join(process.cwd(), "data"));
-    fs.writeFileSync(path.join(process.cwd(), "data", "files.json"), "[]");
-    filePath = buildFilesPath();
-  }
-
-  const data = extractFiles(filePath);
+  client.close();
 
   return {
     props: {
-      files: data,
+      files: files.map((file) => ({
+        filename: file.filename,
+        filetype: file.filetype,
+        id: file._id.toString(),
+      })),
     },
   };
 }

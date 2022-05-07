@@ -1,7 +1,7 @@
-import { writeFileSync } from "fs";
-import { buildFilesPath, extractFiles } from "../_helper-functions";
+import { MongoClient } from "mongodb";
+const { MONGODB_URI } = require("../../../secrets.json");
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method === "POST") {
     const { filename, filetype } = req.body;
 
@@ -15,32 +15,55 @@ export default function handler(req, res) {
       return;
     }
 
+    const client = await MongoClient.connect(MONGODB_URI);
+
     const newFile = {
       id: new Date().getTime().toString(),
       filename,
       filetype: "." + filetype,
     };
 
-    const filePath = buildFilesPath();
-    const data = extractFiles(filePath);
-    data.push(newFile);
-    writeFileSync(filePath, JSON.stringify(data));
+    const db = client.db();
 
-    res.status(201).json({
+    await db.collection("files").insertOne(newFile);
+
+    // newFile.id = result.insertedId;
+
+    return res.status(201).json({
       success: true,
       message: "File successfully created",
       file: newFile,
     });
-  } else if (req.method === "GET") {
-    const filePath = buildFilesPath();
-    const files = extractFiles(filePath);
+  }
+  if (req.method === "GET") {
+    const client = await MongoClient.connect(MONGODB_URI);
 
-    res.status(200).json({
+    const db = client.db();
+
+    const documents = await db
+      .collection("files")
+      .find()
+      .sort({ _id: -1 })
+      .toArray();
+
+    return res.status(200).json({
       success: true,
       message: "File(s) successfully read",
-      files,
+      files: documents,
     });
+  }
+  if (req.method === "DELETE") {
+    const client = await MongoClient.connect(MONGODB_URI);
+
+    const db = client.db();
+    db.collection("files").deleteMany();
+
+    // client.close();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "All files successfully deleted" });
   } else {
-    res.status(400).json({ message: "Unsupported request method" });
+    return res.status(400).json({ message: "Unsupported request method" });
   }
 }
