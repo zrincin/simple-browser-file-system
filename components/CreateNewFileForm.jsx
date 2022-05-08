@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useRouter } from "next/router";
 import { Container, Form, Button } from "semantic-ui-react";
+import "semantic-ui-css/semantic.min.css";
 
 const CreateNewFile = () => {
   const filenameRef = useRef();
