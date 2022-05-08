@@ -16,15 +16,19 @@ export default function HomePage(props) {
   const hasFiles = files && files.length !== 0;
 
   const deleteFileHandler = (id) => {
-    fetch(`/api/files/deleteFiles/${id}`, {
+    fetch(`/api/files/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
-    })
-      .then((res) => res.json())
-      .then((data) => console.log(data));
-    router.replace("/");
+    });
+  };
+
+  const deleteAllFilesHandler = () => {
+    fetch("/api/files", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    });
   };
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function HomePage(props) {
           <Button
             color="red"
             size="small"
-            onClick={() => router.push("/api/files/deleteFiles/deleteAllFiles")}
+            onClick={() => deleteAllFilesHandler()}
           >
             Delete all files
           </Button>

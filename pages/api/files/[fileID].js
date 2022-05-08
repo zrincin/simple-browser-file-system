@@ -1,5 +1,5 @@
 import fs from "fs";
-import { buildFilesPath, extractFiles } from "../../_helper-functions";
+import { buildFilesPath, extractFiles } from "../_helper-functions";
 
 export default function handler(req, res) {
   if (req.method === "DELETE") {
@@ -22,7 +22,7 @@ export default function handler(req, res) {
       fs.writeFileSync(filePath, JSON.stringify(newFiles));
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "File successfully deleted",
       file: newFiles,
