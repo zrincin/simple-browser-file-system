@@ -2,6 +2,26 @@ import { MongoClient } from "mongodb";
 const { MONGODB_URI } = require("../../../secrets.json");
 
 export default async function handler(req, res) {
+  if (req.method === "GET") {
+    const client = await MongoClient.connect(MONGODB_URI);
+
+    const db = client.db();
+
+    const documents = await db
+      .collection("files")
+      .find()
+      .sort({ _id: -1 })
+      .toArray();
+
+    client.close();
+
+    return res.status(200).json({
+      success: true,
+      message: "File(s) successfully read",
+      files: documents,
+    });
+  }
+
   if (req.method === "POST") {
     const { filename, filetype } = req.body;
 
@@ -27,7 +47,7 @@ export default async function handler(req, res) {
 
     await db.collection("files").insertOne(newFile);
 
-    // newFile.id = result.insertedId;
+    client.close();
 
     return res.status(201).json({
       success: true,
@@ -35,23 +55,7 @@ export default async function handler(req, res) {
       file: newFile,
     });
   }
-  if (req.method === "GET") {
-    const client = await MongoClient.connect(MONGODB_URI);
 
-    const db = client.db();
-
-    const documents = await db
-      .collection("files")
-      .find()
-      .sort({ _id: -1 })
-      .toArray();
-
-    return res.status(200).json({
-      success: true,
-      message: "File(s) successfully read",
-      files: documents,
-    });
-  }
   if (req.method === "DELETE") {
     const client = await MongoClient.connect(MONGODB_URI);
 

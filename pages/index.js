@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { Container, Button } from "semantic-ui-react";
+import { Container, Button, Icon } from "semantic-ui-react";
 import "semantic-ui-css/semantic.min.css";
 import { MongoClient } from "mongodb";
 const { MONGODB_URI } = require("../secrets.json");
@@ -15,13 +15,11 @@ export default function HomePage(props) {
   const hasFiles = files && files.length !== 0;
 
   const deleteFileHandler = (id) => {
-    const reqBody = { fileID: files.id };
     fetch(`/api/files/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(reqBody),
     });
     router.push("/");
   };
@@ -63,13 +61,8 @@ export default function HomePage(props) {
                     display: "inline-flex",
                   }}
                 >
-                  <Button
-                    inverted
-                    color="red"
-                    size="mini"
-                    onClick={() => deleteFileHandler(id)}
-                  >
-                    Delete
+                  <Button icon inverted onClick={() => deleteFileHandler(id)}>
+                    <Icon color="red" name="remove" />
                   </Button>
                 </div>
               </li>

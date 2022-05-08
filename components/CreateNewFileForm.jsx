@@ -37,7 +37,13 @@ const CreateNewFile = () => {
       <Form onSubmit={submiFormtHandler}>
         <Form.Field>
           <label htmlFor="file-name">Input desired file name:</label>
-          <input required type="text" id="file-name" ref={filenameRef} />
+          <input
+            required
+            autoComplete="off"
+            type="text"
+            id="file-name"
+            ref={filenameRef}
+          />
         </Form.Field>
         <Form.Field>
           <label htmlFor="file-type">
@@ -45,6 +51,7 @@ const CreateNewFile = () => {
           </label>
           <input
             required
+            autoComplete="off"
             type="text"
             id="file-type"
             placeholder="e.g. txt, pdf, jpg, gif, etc."
