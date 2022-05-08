@@ -1,25 +1,20 @@
-import { MongoClient } from "mongodb";
-const { MONGODB_URI } = require("../../../secrets.json");
+import { connectDB, getDocuments } from "../../../util-functions";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    const client = await MongoClient.connect(MONGODB_URI);
+    try {
+      const documents = await getDocuments(client, "files", { _id: -1 });
 
-    const db = client.db();
-
-    const documents = await db
-      .collection("files")
-      .find()
-      .sort({ _id: -1 })
-      .toArray();
-
-    client.close();
-
-    return res.status(200).json({
-      success: true,
-      message: "File(s) successfully read",
-      files: documents,
-    });
+      return res.status(200).json({
+        success: true,
+        message: "File(s) successfully read",
+        files: documents,
+      });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Getting files failed" });
+    }
   }
 
   if (req.method === "POST") {
@@ -32,42 +27,51 @@ export default async function handler(req, res) {
       filetype.trim() === ""
     ) {
       res.status(422).json({ success: false, message: "Invalid input data" });
+      client.close();
       return;
     }
 
-    const client = await MongoClient.connect(MONGODB_URI);
+    try {
+      const client = await connectDB();
+      const newFile = {
+        id: new Date().getTime().toString(),
+        filename,
+        filetype: "." + filetype,
+      };
 
-    const newFile = {
-      id: new Date().getTime().toString(),
-      filename,
-      filetype: "." + filetype,
-    };
+      const db = client.db();
+      await db.collection("files").insertOne(newFile);
 
-    const db = client.db();
-
-    await db.collection("files").insertOne(newFile);
-
-    client.close();
-
-    return res.status(201).json({
-      success: true,
-      message: "File successfully created",
-      file: newFile,
-    });
+      return res.status(201).json({
+        success: true,
+        message: "File successfully created",
+        file: newFile,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Inserting files into the database failed",
+      });
+    }
   }
 
   if (req.method === "DELETE") {
-    const client = await MongoClient.connect(MONGODB_URI);
+    try {
+      const client = await connectDB();
+      const db = client.db();
+      db.collection("files").deleteMany();
 
-    const db = client.db();
-    db.collection("files").deleteMany();
-
-    // client.close();
-
-    return res
-      .status(200)
-      .json({ success: true, message: "All files successfully deleted" });
+      return res
+        .status(200)
+        .json({ success: true, message: "All files successfully deleted" });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Deleting files from the database failed",
+      });
+    }
   } else {
-    return res.status(400).json({ message: "Unsupported request method" });
+    res.status(400).json({ message: "Unsupported request method" });
   }
+  client.close();
 }
