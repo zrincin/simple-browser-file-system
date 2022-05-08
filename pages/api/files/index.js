@@ -3,6 +3,7 @@ import { connectDB, getDocuments } from "../../../util-functions";
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
+      const client = await connectDB();
       const documents = await getDocuments(client, "files", { _id: -1 });
 
       return res.status(200).json({
